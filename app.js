@@ -12,11 +12,14 @@ function emptyData(){
     thanhVien:[], suKien:[], tinTuc:[] };
 }
 
-async function loadInitialData(){
-  try{
-    const ls = localStorage.getItem(LS_KEY);
-    if(ls) return JSON.parse(ls);
-  }catch(e){}
+async function loadInitialData(useDraft){
+  // Chỉ trang admin mới ưu tiên bản nháp trong máy. Trang chính luôn đọc dữ liệu đã đăng.
+  if(useDraft){
+    try{
+      const ls = localStorage.getItem(LS_KEY);
+      if(ls) return JSON.parse(ls);
+    }catch(e){}
+  }
   try{
     const res = await fetch(DATA_BASE + 'data/giapha.json', {cache:'no-store'});
     if(res.ok) return await res.json();
@@ -24,6 +27,7 @@ async function loadInitialData(){
   if(window.GIAPHA_SEED) return window.GIAPHA_SEED;
   return emptyData();
 }
+function hasDraft(){ try{ return !!localStorage.getItem(LS_KEY); }catch(e){ return false; } }
 
 const uid = (p='id') => p + '-' + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-3);
 
@@ -133,8 +137,9 @@ const Ic = {
 function App(){
   const [data, setData] = useState(null);
 
-  useEffect(()=>{ loadInitialData().then(setData); },[]);
-  useEffect(()=>{ if(data){ try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){} } },[data]);
+  useEffect(()=>{ loadInitialData(PAGE==='admin').then(setData); },[]);
+  // Chỉ trang admin lưu nháp; trang chính không ghi đè localStorage.
+  useEffect(()=>{ if(data && PAGE==='admin'){ try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){} } },[data]);
 
   if(!data) return <div className="p-10 text-center serif text-do text-xl">Đang mở gia phả…</div>;
   if(PAGE === 'admin') return <AdminPage data={data} setData={setData}/>;
@@ -554,8 +559,18 @@ function AdminView({data, setData}){
   const SUBS = [['tv','👥 Thành viên'],['info','🏷️ Thông tin & Lịch sử'],['nt','🏛️ Nhà thờ tổ'],
     ['sk','📅 Sự kiện'],['tt','📰 Tin tức'],['data','💾 Xuất / Nhập dữ liệu']];
 
+  const reloadPublished = ()=>{
+    if(confirm('Tải lại dữ liệu đã ĐĂNG trên GitHub?\n\nBản nháp trong trình duyệt này sẽ bị bỏ (nếu chưa Tải file giapha.json để commit thì sẽ mất).')){
+      try{ localStorage.removeItem(LS_KEY); }catch(e){}
+      location.reload();
+    }
+  };
   return (
     <div>
+      <div className="mb-4 bg-vangnhat/50 border border-vang rounded-lg p-3 text-sm flex flex-wrap items-center gap-3">
+        <span className="flex-1 min-w-[240px]">📝 Bạn đang sửa <b>bản nháp lưu trong trình duyệt này</b>. Thay đổi chỉ hiện trên trang gia phả (và các máy khác) sau khi vào <b>💾 Xuất / Nhập dữ liệu → Tải file giapha.json</b> rồi commit lên GitHub.</span>
+        <button onClick={reloadPublished} className="bg-do text-kem px-3 py-1.5 rounded-lg hover:bg-dodam whitespace-nowrap">↻ Tải lại dữ liệu đã đăng</button>
+      </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {SUBS.map(([k,l])=>(
           <button key={k} onClick={()=>setSub(k)}
