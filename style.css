@@ -1,0 +1,62 @@
+:root{
+  --do:#7d1a1a; --dodam:#5a1010; --vang:#c8a04a; --kem:#f7f1e1; --nen:#fbf7ec; --muc:#2b211a;
+}
+html,body{background:var(--nen); color:var(--muc); font-family:"Be Vietnam Pro",system-ui,sans-serif;}
+h1,h2,h3,.serif{font-family:"Noto Serif",serif;}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.05; z-index:0;
+  background-image:radial-gradient(var(--do) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+#root{position:relative; z-index:1;}
+
+/* ====== Cây phả đồ (CSS org-chart) ====== */
+.tree, .tree ul, .tree li { list-style:none; margin:0; padding:0; }
+.tree { display:inline-block; padding-top:8px; }
+.tree ul { display:flex; padding-top:26px; position:relative; }
+.tree li {
+  display:flex; flex-direction:column; align-items:center;
+  position:relative; padding:26px 12px 0 12px;
+}
+.tree li::before, .tree li::after{
+  content:""; position:absolute; top:0; width:50%; height:26px;
+  border-top:2px solid var(--vang);
+}
+.tree li::before{ right:50%; border-right:2px solid var(--vang); }
+.tree li::after { left:50%;  }
+.tree li:only-child::before, .tree li:only-child::after{ display:none; }
+.tree li:first-child::before, .tree li:last-child::after{ border:0 none; }
+.tree li:last-child::before{ border-right:2px solid var(--vang); border-radius:0 8px 0 0; }
+.tree li:first-child::after { border-radius:8px 0 0 0; }
+.tree ul::before{
+  content:""; position:absolute; top:0; left:50%;
+  border-left:2px solid var(--vang); height:26px;
+}
+.tree > .node-wrap::before{ display:none; }
+
+.card{
+  background:linear-gradient(180deg,#fffdf7,#f3ead1);
+  border:1.5px solid var(--vang);
+  box-shadow:0 2px 6px rgba(90,16,16,.15);
+  border-radius:12px; cursor:pointer; transition:transform .12s, box-shadow .12s;
+  min-width:150px;
+}
+.card:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(90,16,16,.28); }
+.card.selected{ outline:3px solid var(--do); outline-offset:2px; }
+.card.mine{ box-shadow:0 0 0 3px var(--do), 0 6px 16px rgba(90,16,16,.3); }
+
+.viewport{ overflow:hidden; cursor:grab; background:
+    radial-gradient(circle at 20% 10%, #fffaf0, #f4ecd8 70%); }
+.viewport.dragging{ cursor:grabbing; }
+.canvas{ transform-origin:0 0; will-change:transform; }
+
+.btn{ font-family:"Be Vietnam Pro"; }
+.scroll-thin::-webkit-scrollbar{width:8px;height:8px;}
+.scroll-thin::-webkit-scrollbar-thumb{background:var(--vang);border-radius:8px;}
+
+@media print{
+  .no-print{ display:none !important; }
+  .viewport{ overflow:visible !important; height:auto !important; }
+  .canvas{ transform:none !important; }
+  body::before{ display:none; }
+}
