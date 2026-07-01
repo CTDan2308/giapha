@@ -177,8 +177,6 @@ function SiteApp({data, setData}){
                 <span className="mr-1">{ic}</span>{label}
               </button>
             ))}
-            <a href="admin/" className="btn px-4 py-2.5 text-sm md:text-[15px] border-b-2 border-transparent text-kem/60 hover:text-vang">
-              <span className="mr-1">{Ic.admin}</span>Quản trị</a>
           </div>
         </nav>
       </header>
@@ -197,7 +195,7 @@ function SiteApp({data, setData}){
 
       <footer className="no-print bg-dodam text-kem/70 text-center text-xs py-4 border-t-4 border-vang">
         <p>© {data.tenDongHo||'Gia phả dòng họ'} · Lưu trữ trên GitHub Pages · CTDAN2308</p>
-        <p className="mt-1">Uống nước nhớ nguồn — Ăn quả nhớ kẻ trồng cây · <a href="admin/" className="underline hover:text-vang">Trang quản trị</a></p>
+        <p className="mt-1">Uống nước nhớ nguồn — Ăn quả nhớ kẻ trồng cây</p>
       </footer>
     </div>
   );
