@@ -45,10 +45,8 @@ body::before{
 .card.selected{ outline:3px solid var(--do); outline-offset:2px; }
 .card.mine{ box-shadow:0 0 0 3px var(--do), 0 6px 16px rgba(90,16,16,.3); }
 
-.viewport{ overflow:hidden; cursor:grab; background:
-    radial-gradient(circle at 20% 10%, #fffaf0, #f4ecd8 70%); }
-.viewport.dragging{ cursor:grabbing; }
-.canvas{ transform-origin:0 0; will-change:transform; }
+.viewport{ background: radial-gradient(circle at 20% 10%, #fffaf0, #f4ecd8 70%); }
+.tree-scale{ will-change:transform; }
 
 .btn{ font-family:"Be Vietnam Pro"; }
 .scroll-thin::-webkit-scrollbar{width:8px;height:8px;}
@@ -56,7 +54,8 @@ body::before{
 
 @media print{
   .no-print{ display:none !important; }
-  .viewport{ overflow:visible !important; height:auto !important; }
-  .canvas{ transform:none !important; }
+  .viewport{ overflow:visible !important; height:auto !important; border:0 !important; }
+  .tree-sizer{ width:auto !important; height:auto !important; position:static !important; }
+  .tree-scale{ transform:none !important; position:static !important; padding:0 !important; }
   body::before{ display:none; }
 }

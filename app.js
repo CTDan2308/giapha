@@ -232,39 +232,40 @@ function AdminPage({data, setData}){
 
 /* ============================ Cây phả đồ ============================ */
 function TreeView({idx, selId, setSelId, mineId, setMineId}){
+  const innerRef = useRef(null);
   const vpRef = useRef(null);
-  const [t, setT] = useState({x:40,y:20,s:1});
-  const [drag, setDrag] = useState(false);
-  const dragRef = useRef(null);
+  const centeredRef = useRef(false);
+  const [scale, setScale] = useState(0.9);
+  const [nat, setNat] = useState({w:0,h:0});
   const [collapsed, setCollapsed] = useState({});
-
   const toggle = id => setCollapsed(c=>({...c,[id]:!c[id]}));
 
-  const onDown = e=>{
-    if(e.target.closest('.card')||e.target.closest('.toggle-btn')) return;
-    setDrag(true);
-    dragRef.current = {x:e.clientX-t.x, y:e.clientY-t.y};
-  };
-  const onMove = e=>{
-    if(!drag||!dragRef.current) return;
-    setT(p=>({...p, x:e.clientX-dragRef.current.x, y:e.clientY-dragRef.current.y}));
-  };
-  const onUp = ()=>{ setDrag(false); dragRef.current=null; };
-  const onWheel = e=>{
-    e.preventDefault();
-    const rect = vpRef.current.getBoundingClientRect();
-    const mx = e.clientX-rect.left, my = e.clientY-rect.top;
-    const ds = e.deltaY<0 ? 1.12 : 0.89;
-    setT(p=>{
-      const ns = Math.min(2.5, Math.max(0.25, p.s*ds));
-      const k = ns/p.s;
-      return { s:ns, x: mx-(mx-p.x)*k, y: my-(my-p.y)*k };
-    });
-  };
-  const zoom = f => setT(p=>({...p, s:Math.min(2.5,Math.max(0.25,p.s*f))}));
-  const reset = ()=> setT({x:40,y:20,s:1});
+  // Đo kích thước tự nhiên của cây (không phụ thuộc scale) để khung cuộn đúng.
+  const measure = useCallback(()=>{
+    const el = innerRef.current;
+    if(el) setNat({ w: el.scrollWidth, h: el.scrollHeight });
+  },[]);
+  useEffect(()=>{ measure(); },[collapsed, idx, measure]);
+  // Cuộn canh giữa gốc cây lần đầu khi đã đo được kích thước.
+  useEffect(()=>{
+    if(!centeredRef.current && nat.w && vpRef.current){
+      const vp = vpRef.current;
+      vp.scrollLeft = Math.max(0, (vp.scrollWidth - vp.clientWidth)/2);
+      centeredRef.current = true;
+    }
+  },[nat.w]);
+  useEffect(()=>{
+    const onResize = ()=>measure();
+    window.addEventListener('resize', onResize);
+    const t = setTimeout(measure, 400);                 // đo lại sau khi web-font tải xong
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    return ()=>{ window.removeEventListener('resize', onResize); clearTimeout(t); };
+  },[measure]);
+
+  const zoom = f => setScale(s => Math.min(2.5, Math.max(0.3, Math.round(s*f*100)/100)));
+  const reset = ()=> setScale(0.9);
   const expandAll = ()=> setCollapsed({});
-  const doPrint = ()=>{ expandAll(); setTimeout(()=>window.print(),150); };
+  const doPrint = ()=>{ setCollapsed({}); setScale(1); setTimeout(()=>window.print(),250); };
 
   if(!idx.roots.length) return <Empty msg="Chưa có thành viên nào. Vào trang Quản trị để thêm Thủy tổ." />;
 
@@ -273,23 +274,24 @@ function TreeView({idx, selId, setSelId, mineId, setMineId}){
       <div className="no-print flex flex-wrap items-center gap-2 mb-3">
         <ToolBtn onClick={()=>zoom(1.15)}>{Ic.zoomIn} Phóng to</ToolBtn>
         <ToolBtn onClick={()=>zoom(0.87)}>{Ic.zoomOut} Thu nhỏ</ToolBtn>
-        <ToolBtn onClick={reset}>↺ Về giữa</ToolBtn>
+        <ToolBtn onClick={reset}>↺ Mặc định</ToolBtn>
+        <span className="text-sm font-semibold text-do px-1 select-none">{Math.round(scale*100)}%</span>
         <ToolBtn onClick={expandAll}>⧉ Mở tất cả nhánh</ToolBtn>
         <ToolBtn onClick={doPrint}>{Ic.print} Xuất phả đồ (In/PDF)</ToolBtn>
-        <span className="text-xs text-do/70 ml-auto">Kéo nền để di chuyển · Lăn chuột để phóng to · Bấm vào ô để xem chi tiết</span>
+        <span className="text-xs text-do/70 ml-auto">Cuộn ngang/dọc để xem · Bấm vào ô để xem chi tiết</span>
       </div>
 
-      <div ref={vpRef}
-        className={"viewport rounded-xl border-2 border-vang shadow-inner "+(drag?'dragging':'')}
-        style={{height:'70vh'}}
-        onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp} onWheel={onWheel}>
-        <div className="canvas" style={{transform:`translate(${t.x}px,${t.y}px) scale(${t.s})`}}>
-          <ul className="tree">
-            {idx.roots.map(r=>(
-              <TreeNode key={r.id} node={r} idx={idx} selId={selId} setSelId={setSelId}
-                mineId={mineId} collapsed={collapsed} toggle={toggle}/>
-            ))}
-          </ul>
+      <div ref={vpRef} className="viewport rounded-xl border-2 border-vang shadow-inner" style={{height:'72vh', overflow:'auto'}}>
+        <div className="tree-sizer" style={{position:'relative', width: nat.w? nat.w*scale : '100%', height: nat.h? nat.h*scale : '100%'}}>
+          <div ref={innerRef} className="tree-scale"
+            style={{position:'absolute', top:0, left:0, transformOrigin:'top left', transform:`scale(${scale})`, padding:'20px'}}>
+            <ul className="tree">
+              {idx.roots.map(r=>(
+                <TreeNode key={r.id} node={r} idx={idx} selId={selId} setSelId={setSelId}
+                  mineId={mineId} collapsed={collapsed} toggle={toggle}/>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
